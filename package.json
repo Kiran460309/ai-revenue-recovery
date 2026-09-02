@@ -1,0 +1,18 @@
+{
+  "name": "ai-revenue-recovery",
+  "version": "1.0.0",
+  "description": "AI Revenue Recovery Agent for Razorpay AI Buildathon 2026",
+  "main": "backend/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node backend/server.js",
+    "test": "node tests/run_tests.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.11.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "razorpay": "^2.9.2"
+  }
+}

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Revenue Recovery Agent Dashboard</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Chart.js via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-logo">
+      <h1>AI Revenue Recovery Agent</h1>
+      <p class="tagline">Razorpay AI Buildathon 2026 — Track 03</p>
+    </div>
+    <div class="header-controls">
+      <div class="status-indicator">
+        <span class="status-dot green"></span>
+        <span class="status-text">System Live (Mock Mode)</span>
+      </div>
+      <label class="switch-container">
+        <input type="checkbox" id="timeout-toggle">
+        <span class="slider"></span>
+        <span class="switch-label">Inject API Timeout (504)</span>
+      </label>
+      <button class="btn btn-primary" id="run-batch-btn">Run Batch Simulation</button>
+    </div>
+  </header>
+
+  <main class="dashboard-layout">
+    <!-- Top Stats Row -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <h3>₹ At Risk</h3>
+        <p class="stat-value text-red" id="total-at-risk">₹0.00</p>
+        <span class="stat-sub" id="total-failed-count">0 Failed Payments</span>
+      </div>
+      <div class="stat-card">
+        <h3>₹ Recovered</h3>
+        <p class="stat-value text-green" id="total-recovered">₹0.00</p>
+        <span class="stat-sub" id="total-recovered-count">0 Successful Retries</span>
+      </div>
+      <div class="stat-card">
+        <h3>Overall Recovery Rate</h3>
+        <p class="stat-value text-blue" id="recovery-rate">0.0%</p>
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="recovery-progress" style="width: 0%"></div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <h3>Halted / False-Stop Rate</h3>
+        <p class="stat-value text-orange" id="false-stop-rate">0.0%</p>
+        <span class="stat-sub" id="halted-mandates-count">0 Mandates Stopped</span>
+      </div>
+      <div class="stat-card stat-card-highlight">
+        <h3>vs Naive Retry Baseline</h3>
+        <p class="stat-value text-green" id="baseline-uplift">+0.0%</p>
+        <span class="stat-sub" id="baseline-sub">Recovery Uplift</span>
+      </div>
+      <div class="stat-card">
+        <h3>True Incremental Recovery</h3>
+        <p class="stat-value text-purple" id="incremental-recovery">—</p>
+        <span class="stat-sub" id="incremental-sub">vs No-Intervention Control</span>
+      </div>
+    </section>
+
+    <!-- Main Content Panels -->
+    <div class="panels-grid">
+      
+      <!-- Left Panel: Transaction Grid -->
+      <section class="panel panel-transactions">
+        <div class="panel-header">
+          <h2>Active Failed Payments</h2>
+          <span class="badge" id="active-badge">0 active</span>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Payment ID</th>
+                <th>Customer</th>
+                <th>Amount</th>
+                <th>Root Cause</th>
+                <th>Attempts</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="transaction-rows">
+              <tr>
+                <td colspan="7" class="text-center text-muted">No transactions loaded. Click "Run Batch Simulation" above to ingest synthetic payments.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Right Panel: Analytics & Audit Stream -->
+      <section class="panel panel-analytics">
+        <div class="panel-header">
+          <h2>Recovery Analytics</h2>
+        </div>
+        <div class="chart-container">
+          <canvas id="recovery-chart"></canvas>
+        </div>
+        
+        <div class="quick-audit-section">
+          <h3>Recent System Audit Events</h3>
+          <div class="audit-stream" id="quick-audit-stream">
+            <p class="text-muted">No audit events generated yet.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Nudges Feed Panel -->
+    <section class="panel panel-nudges" id="nudges-panel">
+      <div class="panel-header">
+        <h2>📬 Delivered Nudges Feed</h2>
+        <span class="badge" id="nudges-badge">0 nudges</span>
+      </div>
+      <div class="nudges-feed" id="nudges-feed">
+        <p class="text-muted">No nudges dispatched yet. Run a batch simulation to generate nudge events.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Audit Trail Detail Modal -->
+  <div class="modal" id="audit-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h2 id="modal-title">Payment Audit Trail</h2>
+          <p class="text-muted" id="modal-subtitle">Loading transaction details...</p>
+        </div>
+        <button class="close-btn" id="close-modal-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Transaction Summary Box -->
+        <div class="summary-box">
+          <div class="summary-col">
+            <strong>Customer ID:</strong> <span id="summary-customer-id">-</span>
+          </div>
+          <div class="summary-col">
+            <strong>Amount:</strong> <span id="summary-amount">-</span>
+          </div>
+          <div class="summary-col">
+            <strong>Current Status:</strong> <span class="status-pill" id="summary-status">-</span>
+          </div>
+        </div>
+
+        <!-- Classification Box -->
+        <div class="classification-box">
+          <h3>Diagnosis Result</h3>
+          <div class="classification-detail">
+            <strong>Classified Root Cause:</strong> <span id="class-cause" class="text-bold">-</span>
+            <strong>Confidence:</strong> <span id="class-confidence">-</span>
+            <strong>Classification Source:</strong> <span id="class-method" class="badge">-</span>
+          </div>
+        </div>
+
+        <!-- History Timeline -->
+        <div class="timeline-container">
+          <h3>Decision & Execution Timeline</h3>
+          <ul class="timeline" id="timeline-list">
+            <!-- Timeline nodes added dynamically -->
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <p>AI Revenue Recovery Agent — Razorpay AI Buildathon 2026</p>
+  </footer>
+
+  <script src="index.js"></script>
+</body>
+</html>
