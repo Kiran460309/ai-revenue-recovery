@@ -60,48 +60,66 @@ We enforce a strict **"LLM Proposes, Deterministic Policy Engine Decides"** arch
 
 ```mermaid
 flowchart TB
-    Payment["❌ Ingest Failed Payment Event"] --> DiagnosticLayer
-    
-    subgraph DiagnosticLayer["1. Diagnostic & Scoring Layer (Advisory Only)"]
-        direction TB
-        Classify["Root Cause Classifier<br/>(Rules → Regex → Gemini 1.5 Flash)"]
-        ML["Trained ML Recovery Scorer<br/>(8-Feature Logistic Regression via SGD)"]
-        Classify -->|Typed Diagnosis| ML
+    PaymentEvent["Payment Event"]
+
+    subgraph HeuristicProbabilisticLayer["Heuristic / Probabilistic Layer"]
+        FastAPIOrchestrator["FastAPI Orchestrator"]
+        LLMAgent["LLM Agent"]
     end
-    
-    DiagnosticLayer -->|Diagnosis + ML Score [0..1]| SafetyLayer
-    
-    subgraph SafetyLayer["2. Deterministic Safety & Policy Engine (Absolute Control)"]
-        direction TB
-        L1{"1. Idempotency Lock Check"}
-        L2{"2. Economic Floor Gate (> ₹100)"}
-        L3{"3. 3-Retry Hard Stop (Polar Bug Fix)"}
-        L4{"4. ML Probability Floor (> 0.15)"}
-        L1 --> L2 --> L3 --> L4
+
+    subgraph DeterministicSafetyBoundary["Deterministic Safety Boundary"]
+        PolicyEngine["Policy Engine"]
+        SQLiteWALStateStore[("SQLite WAL State Store")]
     end
-    
-    SafetyLayer -->|Approved Strategy Record| ActionLayer
-    
-    subgraph ActionLayer["3. Execution & Dispatch Layer (Idempotency Locked)"]
-        direction TB
-        Exec["Execution Dispatcher"]
-        Gateway["Razorpay Test API / Mock Gateway"]
-        WhatsApp["Async Nudge Dispatcher (WhatsApp)"]
-        DB[("Synchronous State Store (JSON DB)")]
-        
-        Exec -->|Tokenized Charge| Gateway
-        Exec -->|Hinglish Recovery Copy| WhatsApp
-        Gateway -->|Update Status| DB
-        WhatsApp -->|Persist Delivery State| DB
-    end
+
+    Executor["Executor"]
+    TestModeMockExecutor["test-mode/mock executor"]
+
+    PaymentEvent --> FastAPIOrchestrator
+    FastAPIOrchestrator -->|Unstructured Logs| LLMAgent
+    LLMAgent -->|Diagnosis Class + Evidence| FastAPIOrchestrator
+    FastAPIOrchestrator --> PolicyEngine
+
+    PolicyEngine -->|Confidence Check| PolicyEngine
+    PolicyEngine -->|Atomic UPSERT Lock| SQLiteWALStateStore
+    PolicyEngine -->|Final Approved Action| Executor
+
+    Executor -->|Primary Key Constraint| SQLiteWALStateStore
+    Executor -->|Dispatch| TestModeMockExecutor
 ```
 
 ---
 
 ## 🔬 How It Works: The 6-Stage Pipeline
 
-```
-[1. INGEST] ──► [2. DIAGNOSE] ──► [3. ML SCORE] ──► [4. POLICY ENGINE] ──► [5. EXECUTE] ──► [6. AUDIT & LIFT]
+```mermaid
+flowchart TB
+    PaymentEvent["Payment Event"]
+
+    subgraph HeuristicProbabilisticLayer["Heuristic / Probabilistic Layer"]
+        FastAPIOrchestrator["FastAPI Orchestrator"]
+        LLMAgent["LLM Agent"]
+    end
+
+    subgraph DeterministicSafetyBoundary["Deterministic Safety Boundary"]
+        PolicyEngine["Policy Engine"]
+        SQLiteWALStateStore[("SQLite WAL State Store")]
+    end
+
+    Executor["Executor"]
+    TestModeMockExecutor["test-mode/mock executor"]
+
+    PaymentEvent --> FastAPIOrchestrator
+    FastAPIOrchestrator -->|Unstructured Logs| LLMAgent
+    LLMAgent -->|Diagnosis Class + Evidence| FastAPIOrchestrator
+    FastAPIOrchestrator --> PolicyEngine
+
+    PolicyEngine -->|Confidence Check| PolicyEngine
+    PolicyEngine -->|Atomic UPSERT Lock| SQLiteWALStateStore
+    PolicyEngine -->|Final Approved Action| Executor
+
+    Executor -->|Primary Key Constraint| SQLiteWALStateStore
+    Executor -->|Dispatch| TestModeMockExecutor
 ```
 
 ```
