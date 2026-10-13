@@ -143,6 +143,6 @@ The engine includes **42 automated assertions** across **9 test groups**:
 
 ## 👥 Project Info
 
-- **Author:** Kiran.S
+- **Author:** Kiran.S 
 - **Event:** Razorpay AI Buildathon 2026 (Track 03: AI Revenue Recovery)
 - **License:** [MIT](./package.json)
