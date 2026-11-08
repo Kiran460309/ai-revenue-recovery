@@ -1,6 +1,6 @@
 # 🛡️ AI Revenue Recovery Agent
 
-> **Razorpay AI Buildathon 2026 — Track 03: AI Revenue Recovery**  
+> **Razorpay AI Buildathon 2026 — Track 03: AI Revenue Recovery**   
 > *Autonomous, Policy-Bounded Recurring Billing Recovery Engine for India's 850M+ UPI AutoPay Mandates.*
  
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
